@@ -17,7 +17,7 @@
 # sed -i 's/OpenWrt/iStore OS/g' package/base-files/files/bin/config_generate
 
 # ttyd 自动登录
-# sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${GITHUB_WORKSPACE}/openwrt/package/feeds/packages/ttyd/files/ttyd.config
+sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${GITHUB_WORKSPACE}/openwrt/package/feeds/packages/ttyd/files/ttyd.config
 
 # 添加自定义软件包
 # echo '
