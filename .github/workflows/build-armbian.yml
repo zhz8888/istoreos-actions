@@ -128,7 +128,7 @@ jobs:
             declare -a BOARDS=("orangepi3b" "rock-3c")
             for BOARD in "${BOARDS[@]}"; do  
               echo "Compiling for board: $BOARD"  
-              ./compile.sh BOARD=${{ inputs.BOARD }} \
+              ./compile.sh BOARD=$BOARD \
                 RELEASE=${{ inputs.RELEASE }} \
                 BRANCH=${{ inputs.BRANCH }} \
                 BUILD_MINIMAL=no \
