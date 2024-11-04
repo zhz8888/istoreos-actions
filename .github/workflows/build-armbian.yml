@@ -34,11 +34,12 @@ on:
           - edge
       BUILD_DESKTOP:  
         description: 'Build desktop environment'  
-        default: 'no'  
-        required: false  
+        default: 'no'
+        required: false
         type: choice
         options:
           - no
+          - gnome
       COMPRESS_OUTPUTIMAGE:  
         description: 'Compress output image'  
         default: 'sha,xz'  
