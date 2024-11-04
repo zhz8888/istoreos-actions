@@ -17,10 +17,9 @@ on:
       BOARD:
         description: "Select device board."
         required: false
-        default: "all"
+        default: "orangepi3b"
         type: choice
         options:
-          - all
           - orangepi3b
           - rock-3c
       BRANCH:  
@@ -123,47 +122,24 @@ jobs:
         if: ${{ steps.down.outputs.status }} == 'success' && !cancelled()
         run: |
           cd build/
-          # 当 BOARD 为 all 时，遍历所有板类型  
-          if [ "${{ inputs.BOARD }}" = "all" ]; then  
-            declare -a BOARDS=("orangepi3b" "rock-3c")
-            for BOARD in "${BOARDS[@]}"; do  
-              echo "Compiling for board: $BOARD"  
-              ./compile.sh BOARD=$BOARD \
-                RELEASE=${{ inputs.RELEASE }} \
-                BRANCH=${{ inputs.BRANCH }} \
-                BUILD_MINIMAL=no \
-                BUILD_DESKTOP=${{ inputs.BUILD_DESKTOP }} \
-                KERNEL_CONFIGURE=no \
-                COMPRESS_OUTPUTIMAGE=${{ inputs.COMPRESS_OUTPUTIMAGE }} \
-                IMAGE_XZ_COMPRESSION_RATIO=9 \
-                BOOT_LOGO=${{ inputs.BOOT_LOGO }}  
-            if [ $? -ne 0 ]; then  
-              echo "Compilation failed for board: $BOARD" >&2  # 将错误消息输出到标准错误流    
-            fi   
-              done  
-            else  
-              # 否则，仅对指定的 BOARD 进行编译  
-              ./compile.sh BOARD=${{ inputs.BOARD }} \
-                RELEASE=${{ inputs.RELEASE }} \
-                BRANCH=${{ inputs.BRANCH }} \
-                BUILD_MINIMAL=no \
-                BUILD_DESKTOP=${{ inputs.BUILD_DESKTOP }} \
-                KERNEL_CONFIGURE=no \
-                COMPRESS_OUTPUTIMAGE=${{ inputs.COMPRESS_OUTPUTIMAGE }} \
-                IMAGE_XZ_COMPRESSION_RATIO=9 \
-                  BOOT_LOGO=${{ inputs.BOOT_LOGO }}  
-            if [ $? -ne 0 ]; then  
-              echo "Compilation failed for specified board: $INPUT_BOARD" >&2  
-              exit 1  # 如果是指定单个板子且失败，则退出脚本  
-            fi
-          fi
+          ./compile.sh BOARD=${{ inputs.BOARD }} \
+            RELEASE=${{ inputs.RELEASE }} \
+            BRANCH=${{ inputs.BRANCH }} \
+            BUILD_MINIMAL=no \
+            BUILD_DESKTOP=${{ inputs.BUILD_DESKTOP }} \
+            KERNEL_CONFIGURE=no \
+            COMPRESS_OUTPUTIMAGE=${{ inputs.COMPRESS_OUTPUTIMAGE }} \
+            IMAGE_XZ_COMPRESSION_RATIO=9 \
+            BOOT_LOGO=${{ inputs.BOOT_LOGO }}
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Prepare Release Metadata
         run: |
           echo "CURRENT_YEAR_MONTH=$(date +'%Y%m')" >> $GITHUB_ENV
+          cd build/
           # 提取版本号
-          # latest_image=$(ls ${GITHUB_WORKSPACE}/build/output/images/Armbian-unofficial_*.img.xz | grep -oE 'Armbian-unofficial_[0-9.]+_.*' | sort -V | tail -n 1) 
-          latest_image=$(ls ${GITHUB_WORKSPACE}/build/output/images/Armbian-unofficial_*.img.xz | sort -V | tail -n 1)
+          # latest_image=$(ls /builder/build/output/images/Armbian-unofficial_*.img.xz | grep -oE 'Armbian-unofficial_[0-9.]+_.*' | sort -V | tail -n 1) 
+          latest_image=$(ls /builder/build/output/images/Armbian-unofficial_*.img.xz | sort -V | tail -n 1)
           version=$(echo "$latest_image" | cut -d'_' -f2)  
   
           # 将版本号设置为环境变量  
@@ -176,7 +152,7 @@ jobs:
         with:  
           tag: "Armbian_${{ github.event.inputs.Version }}_${{ github.event.inputs.RELEASE }}_${{ env.CURRENT_YEAR_MONTH }}"
           name: "Armbian_${{ github.event.inputs.Version }}_${{ github.event.inputs.RELEASE }}_${{ env.CURRENT_YEAR_MONTH }}"
-          artifacts: "${GITHUB_WORKSPACE}/build/output/images/*"  
+          artifacts: "/builder/build/output/images/*"  
           allowUpdates: true 
           removeArtifacts: false 
           replacesArtifacts: true 
