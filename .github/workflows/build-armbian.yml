@@ -1,4 +1,4 @@
-name: Build armbian
+name: Build Armbian
 
 on:
   repository_dispatch:
@@ -17,10 +17,11 @@ on:
       BOARD:
         description: "Select device board."
         required: false
-        default: "orangepi-3b"
+        default: "all"
         type: choice
         options:
-          - orangepi-3b
+          - all
+          - orangepi3b
           - rock-3c
       BRANCH:  
         description: "Select armbian branch."
@@ -121,18 +122,40 @@ jobs:
         working-directory: /builder
         if: ${{ steps.down.outputs.status }} == 'success' && !cancelled()
         run: |
-          # Compile method and parameter description: https://docs.armbian.com/Developer-Guide_Build-Options
-          cd build/
-          ./compile.sh BOARD=${{ inputs.BOARD }} \
-          RELEASE=${{ inputs.RELEASE }} \
-          BRANCH=${{ inputs.BRANCH }} \
-          BUILD_MINIMAL=no \
-          BUILD_DESKTOP=${{ inputs.BUILD_DESKTOP }} \
-          KERNEL_CONFIGURE=no \
-          COMPRESS_OUTPUTIMAGE=${{ inputs.COMPRESS_OUTPUTIMAGE }} \
-          IMAGE_XZ_COMPRESSION_RATIO=9 \
-          BOOT_LOGO=${{ inputs.BOOT_LOGO }} 
-          echo "status=success" >> ${GITHUB_OUTPUT} 
+          # 当 BOARD 为 all 时，遍历所有板类型  
+          if [ "${{ inputs.BOARD }}" = "all" ]; then  
+            declare -a BOARDS=("orangepi3b" "rock-3c")
+            for BOARD in "${BOARDS[@]}"; do  
+              echo "Compiling for board: $BOARD"  
+              ./compile.sh BOARD=${{ inputs.BOARD }} \
+                RELEASE=${{ inputs.RELEASE }} \
+                BRANCH=${{ inputs.BRANCH }} \
+                BUILD_MINIMAL=no \
+                BUILD_DESKTOP=${{ inputs.BUILD_DESKTOP }} \
+                KERNEL_CONFIGURE=no \
+                COMPRESS_OUTPUTIMAGE=${{ inputs.COMPRESS_OUTPUTIMAGE }} \
+                IMAGE_XZ_COMPRESSION_RATIO=9 \
+                BOOT_LOGO=${{ inputs.BOOT_LOGO }}  
+            if [ $? -ne 0 ]; then  
+              echo "Compilation failed for board: $BOARD" >&2  # 将错误消息输出到标准错误流    
+            fi   
+              done  
+            else  
+              # 否则，仅对指定的 BOARD 进行编译  
+              ./compile.sh BOARD=${{ inputs.BOARD }} \
+                RELEASE=${{ inputs.RELEASE }} \
+                BRANCH=${{ inputs.BRANCH }} \
+                BUILD_MINIMAL=no \
+                BUILD_DESKTOP=${{ inputs.BUILD_DESKTOP }} \
+                KERNEL_CONFIGURE=no \
+                COMPRESS_OUTPUTIMAGE=${{ inputs.COMPRESS_OUTPUTIMAGE }} \
+                IMAGE_XZ_COMPRESSION_RATIO=9 \
+                  BOOT_LOGO=${{ inputs.BOOT_LOGO }}  
+            if [ $? -ne 0 ]; then  
+              echo "Compilation failed for specified board: $INPUT_BOARD" >&2  
+              exit 1  # 如果是指定单个板子且失败，则退出脚本  
+            fi
+          fi
 
       - name: Prepare Release Metadata
         run: |
