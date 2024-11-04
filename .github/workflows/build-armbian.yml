@@ -122,6 +122,7 @@ jobs:
         working-directory: /builder
         if: ${{ steps.down.outputs.status }} == 'success' && !cancelled()
         run: |
+          cd build/
           # 当 BOARD 为 all 时，遍历所有板类型  
           if [ "${{ inputs.BOARD }}" = "all" ]; then  
             declare -a BOARDS=("orangepi3b" "rock-3c")
